@@ -13,11 +13,11 @@ const address = liquidjs.address;
 let allUtxos;
 const MESSAGE_PREFIX = "lm";
 const OUTPUT_INDEX = 0;
-const HOST = "localhost:3001"; ///blockstream.info/liquid/api
-const EXPLORER_URL = "http://localhost:5001";
+const HOST = "https://blockstream.info/liquidtestnet/api"; ///blockstream.info/liquid/api
+const EXPLORER_URL = "https://blockstream.info/liquidtestnet";
 // Fetch all UTXOs for a given address
 async function getUTXOs(address) {
-    const explorerUrl = `http://${HOST}/address/${address}/utxo`;
+    const explorerUrl = `${HOST}/address/${address}/utxo`;
     try {
         const response = await fetch(explorerUrl);
         if (!response.ok) {
@@ -185,7 +185,7 @@ async function showMessages(outputIndex) {
     }
     console.log("cleared");
     let txs = {};
-    let addressTxsResponse = await fetch(`http://${HOST}/address/${getPayment().address}/txs`);
+    let addressTxsResponse = await fetch(`${HOST}/address/${getPayment().address}/txs`);
     let addressTxs = await addressTxsResponse.json();
     let payment = getPayment();
     for (let tx of addressTxs.reverse()) {
@@ -214,13 +214,13 @@ function getValueFromConfidentialOutput(t) {
     return Number(valueBigIntArg);
 }
 async function getTx(txid) {
-    let txHexResponse = await fetch(`http://${HOST}/tx/${txid}/hex`);
+    let txHexResponse = await fetch(`${HOST}/tx/${txid}/hex`);
     let txHex = await txHexResponse.text();
     return liquidjs.Transaction.fromHex(txHex);
 }
 // Should have arg asking whether to include self-send
 async function showTxMessage(txs, txid, outputIndex) {
-    let txHexResponse = await fetch(`http://${HOST}/tx/${txid}/hex`);
+    let txHexResponse = await fetch(`${HOST}/tx/${txid}/hex`);
     let txHex = await txHexResponse.text();
     let txFinal = liquidjs.Transaction.fromHex(txHex);
     if (txFinal?.outs[outputIndex]?.nonce?.length < 32) {
@@ -252,7 +252,7 @@ async function showTxMessage(txs, txid, outputIndex) {
     let decrypted = getDecryptedRingSignatureRangeProof(verificationNonce, txFinal, outputIndex);
     // Add entry to compiled convos
     let message = getMessageFromDecryptedSignature(26, 4, decrypted); //decrypted.subarray(64, 64 + 32);
-    let txMetadataResponse = await fetch(`http://${HOST}/tx/${txid}`);
+    let txMetadataResponse = await fetch(`${HOST}/tx/${txid}`);
     let txMetadata = await txMetadataResponse.json();
     let messageComponents = message.toString("ascii").split(":");
     if (messageComponents.length < 3) {
@@ -338,7 +338,7 @@ async function sendBitcoin(confidentialAddress, message) {
     await showMessages(OUTPUT_INDEX);
 }
 async function submitTransaction(txHex) {
-    const explorerUrl = `http://${HOST}/tx`;
+    const explorerUrl = `${HOST}/tx`;
     await fetch(explorerUrl, {
         method: "POST",
         body: txHex,
