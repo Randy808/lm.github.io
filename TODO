@@ -1,0 +1,11 @@
+- [x] Show messages sent from us
+- [ ] Standardize protocol to prefix all messages with 'lm:m:' to get picked up by the messenger
+- [ ] Make sure that the first message from an unknown address is sender's own blinding key (use 'lm:b:' prefix)
+- Allow withdrawal of liquid funds
+- unblind blinded outputs as part of balance collecting
+  - https://github.com/vulpemventures/liquidjs-lib/blob/master/ts_src/confidential.ts#L59
+  - make sure that we are the destination spk
+- Make privkey from seedphrase and make way to back it up
+- [x] Go back to using addresses instead of public keys
+  - First input should be where we derive it
+- Make the chat window stay within the window bounds and make it scrollable to see messages (the latest messages should always be on the bottom)

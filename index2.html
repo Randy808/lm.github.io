@@ -1,0 +1,19 @@
+<html>
+  <button onclick="getAddress()">Get Address</button>
+  <button onclick="getConfidentialAddress()">Get Confidential Address</button>
+
+  <h1>Address</h1>
+  <p id="address"></p>
+
+  <h1>Confidential Address</h1>
+  <p id="confidential-address"></p>
+
+  <script src="./src/bundle.js"></script>
+  <script>
+    let address = document.getElementById("address");
+    address.innerText = getAddress();
+
+    let confidentialAddress = document.getElementById("confidential-address");
+    confidentialAddress.innerText = getConfidentialAddress()
+  </script>
+</html>

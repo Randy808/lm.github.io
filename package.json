@@ -1,0 +1,34 @@
+{
+  "name": "liquid-messenger",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npx tsc && npx browserify -p esmify src/index.js -o src/bundle.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@bitcoin-js/tiny-secp256k1-asmjs": "^2.2.4",
+    "@noble/curves": "^1.9.7",
+    "@noble/hashes": "^1.8.0",
+    "@types/node": "^24.8.1",
+    "@vulpemventures/secp256k1-zkp": "^3.2.1",
+    "browser-resolve": "^2.0.0",
+    "esmify": "^2.1.1",
+    "liquidjs-lib": "^6.0.2-liquid.37"
+  },
+  "devDependencies": {
+    "babel-preset-es2015": "^6.24.1",
+    "typescript": "^5.9.3"
+  },
+  "babel": {
+    "presets": [
+      "@babel/preset-env",
+      "@babel/preset-react",
+      "es2015"
+    ]
+  }
+}

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Liquid Messenger</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header id="header">
+        <div class="header-content">
+          <div class="logo-section">
+            <div class="logo-icon">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                ></path>
+              </svg>
+            </div>
+            <div>
+              <h1>Liquid Messenger</h1>
+              <p class="subtitle">Powered by Liquid Network</p>
+            </div>
+          </div>
+
+          <div class="header-actions">
+            <div class="info-card">
+              <svg
+                class="icon"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M7 20h10M7 20H5a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4m3 13H7m10 0h2a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-4m-5-3v2m0 0v2m0-2h4m-4 0H8m5-5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"
+                />
+              </svg>
+              <div>
+                <p class="label">Address</p>
+                <div class="address-with-copy">
+                  <p id="user-address" class="value address-value">
+                    Loading...
+                  </p>
+                  <button
+                    id="copy-header-address"
+                    class="copy-btn-small"
+                    title="Copy address"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <rect
+                        x="9"
+                        y="9"
+                        width="13"
+                        height="13"
+                        rx="2"
+                        ry="2"
+                      ></rect>
+                      <path
+                        d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                      ></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-card">
+              <svg
+                class="icon"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"
+                />
+                <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" />
+              </svg>
+              <div>
+                <p class="label">Balance</p>
+                <p id="user-balance" class="value">25,000 sats</p>
+              </div>
+            </div>
+
+            <button id="receive-btn" class="btn-primary">Receive</button>
+          </div>
+        </div>
+      </header>
+
+      <main id="main-content">
+        <aside id="sidebar" class="sidebar">
+          <div class="sidebar-header">
+            <h2>Conversations</h2>
+            <button id="new-chat-btn" class="btn-icon">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </div>
+
+          <div id="chat-list" class="chat-list"></div>
+        </aside>
+
+        <div class="chat-container">
+          <div id="chat-header" class="chat-header">
+            <svg
+              class="icon"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+              ></path>
+            </svg>
+            <div>
+              <p class="label">Address</p>
+              <p id="chat-pubkey" class="value">Select a conversation</p>
+            </div>
+          </div>
+
+          <div id="messages-container" class="messages-container"></div>
+
+          <div class="message-cost">
+            <span>Cost per message:</span>
+            <span class="cost-value">1,000 sats</span>
+          </div>
+
+          <form id="message-form" class="message-form">
+            <input
+              type="text"
+              id="message-input"
+              placeholder="Type your message..."
+              autocomplete="off"
+            />
+            <button type="submit" class="btn-primary">Send</button>
+          </form>
+        </div>
+      </main>
+    </div>
+
+    <div id="receive-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Your Liquid Address</h2>
+          <button id="close-receive-modal" class="btn-icon">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="qr-container">
+          <canvas id="qr-canvas" width="256" height="256"></canvas>
+        </div>
+
+        <div class="address-display">
+          <p id="modal-address"></p>
+        </div>
+
+        <div class="modal-actions">
+          <div class="address-actions">
+            <button id="copy-address-btn" class="btn-copy-address">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path
+                  d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                ></path>
+              </svg>
+              <span id="copy-text">Copy</span>
+            </button>
+          </div>
+          <button id="close-modal-btn" class="btn-secondary flex-1">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="new-chat-modal" class="modal hidden">
+      <div class="modal-content small">
+        <div class="modal-header">
+          <h2>New Conversation</h2>
+          <button id="close-new-chat-modal" class="btn-icon">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label for="new-chat-pubkey">Enter Liquid Address</label>
+          <input
+            type="text"
+            id="new-chat-pubkey"
+            placeholder="lq1qq..."
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="modal-actions">
+          <button id="create-chat-btn" class="btn-primary flex-1">
+            Create Chat
+          </button>
+          <button id="cancel-new-chat-btn" class="btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="src/bundle.js"></script>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
