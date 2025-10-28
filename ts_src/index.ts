@@ -148,7 +148,7 @@ function getConfidentialAddress() {
 async function createBlindedTransaction(
   unconfidentialAddress: string,
   amount: number
-): Promise<Psbt> {
+): Promise<{ psbt: Psbt; blindedInputs: boolean }> {
   const psbt = new Psbt({
     network: NETWORK,
   });
@@ -157,17 +157,19 @@ async function createBlindedTransaction(
   console.log(payment.address);
   let utxos = await getUTXOs(payment.address);
   let selectedUtxos = await selectUTXOs(utxos, 5000);
-  let assetBuffer = Buffer.from(
-    NETWORK.assetHash + "01",
-    "hex"
-  ).reverse();
+  let assetBuffer = Buffer.from(NETWORK.assetHash + "01", "hex").reverse();
 
   let TOTAL_VALUE = 0;
 
+  let blindedInputs = false;
   for (let utxo of selectedUtxos) {
+    let { value } = utxo;
+
     if (utxo.valuecommitment) {
       //TODO: Handle blinded inputs
-      continue;
+      let tx = await getTx(utxo.txid);
+      value = getValueFromConfidentialOutput(tx);
+      blindedInputs = true;
     }
 
     psbt.addInput({
@@ -181,7 +183,7 @@ async function createBlindedTransaction(
       },
     });
 
-    TOTAL_VALUE += utxo.value;
+    TOTAL_VALUE += value;
   }
 
   psbt.addOutput({
@@ -210,12 +212,13 @@ async function createBlindedTransaction(
   });
 
   console.log("✓ Transaction created");
-  return psbt;
+  return { psbt, blindedInputs };
 }
 
 async function blindOutputs(
   psbt: Psbt,
-  blindingPubkey: Buffer
+  blindingPubkey: Buffer,
+  blindInputs: boolean = false
   // blindingKeyPairs: ECPairInterface[]
 ): Promise<{ psbt: Psbt; ephemeralBlinds: any[] }> {
   // TODO: Use static blinding key, but generate a blinding keypair dynamically
@@ -237,7 +240,7 @@ async function blindOutputs(
         publicKey: getBlindingKey().publicKey,
       };
     },
-    new Map(),
+    blindInputs ? new Map().set(0, getBlindingKey().privateKey) : new Map(),
     new Map().set(0, blindingPubkey)
   );
 
@@ -289,13 +292,13 @@ async function showMessages(outputIndex: number) {
   for (let tx of addressTxs.reverse() as any) {
     //99998600
 
-      // if (tx.vin[0].prevout.scriptpubkey_address == getAddress()) {
-      //   await showTxMessage(txs, tx.txid, outputIndex);
-      // }
+    // if (tx.vin[0].prevout.scriptpubkey_address == getAddress()) {
+    //   await showTxMessage(txs, tx.txid, outputIndex);
+    // }
 
-      if (tx.vout[0].scriptpubkey === payment.output.toString("hex")) {
-        await showTxMessage(txs, tx.txid, outputIndex);
-      }
+    if (tx.vout[0].scriptpubkey === payment.output.toString("hex")) {
+      await showTxMessage(txs, tx.txid, outputIndex);
+    }
   }
 
   console.log(txs);
@@ -417,10 +420,12 @@ async function showTxMessage(txs, txid: string, outputIndex: number) {
     txs[addressKey] = [];
   }
 
-
   let clientKey: string = messageComponents[1];
   let clientEncryptedMessage: string = messageComponents[2];
-  let unencryptedMessage = decryptMessage(clientEncryptedMessage, Buffer.from(clientKey, "hex"))
+  let unencryptedMessage = decryptMessage(
+    clientEncryptedMessage,
+    Buffer.from(clientKey, "hex")
+  );
 
   txs[addressKey].push({
     message: unencryptedMessage,
@@ -445,7 +450,7 @@ function decryptMessage(encryptedMessage: string, salt: Uint8Array) {
       j = 0;
     }
 
-    if(messageBytes[i] === 0) {
+    if (messageBytes[i] === 0) {
       break;
     }
     messageBytes[i] ^= key[j];
@@ -484,14 +489,15 @@ async function sendBitcoin(confidentialAddress: string, message: string) {
   //   "el1qqfj44uf6v0wffqm5lnapr9rq4j49uzd7fq50djvn25v3ndlj5u8gcgrhu8g45sr6u5eh2gqyvumzy7nxxspk29mdf38fl94st";
   let recipientBlindingData = getBlindingDataFromAddress(confidentialAddress);
 
-  let psbt = await createBlindedTransaction(
+  let { psbt, blindedInputs } = await createBlindedTransaction(
     recipientBlindingData.unconfidentialAddress,
     1000
   );
 
   let { ephemeralBlinds } = await blindOutputs(
     psbt,
-    recipientBlindingData.blindingPubKey
+    recipientBlindingData.blindingPubKey,
+    blindedInputs
   );
   let t = psbt
     .clone()

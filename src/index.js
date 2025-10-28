@@ -104,10 +104,14 @@ async function createBlindedTransaction(unconfidentialAddress, amount) {
     let selectedUtxos = await selectUTXOs(utxos, 5000);
     let assetBuffer = Buffer.from(NETWORK.assetHash + "01", "hex").reverse();
     let TOTAL_VALUE = 0;
+    let blindedInputs = false;
     for (let utxo of selectedUtxos) {
+        let { value } = utxo;
         if (utxo.valuecommitment) {
             //TODO: Handle blinded inputs
-            continue;
+            let tx = await getTx(utxo.txid);
+            value = getValueFromConfidentialOutput(tx);
+            blindedInputs = true;
         }
         psbt.addInput({
             hash: utxo.txid,
@@ -119,7 +123,7 @@ async function createBlindedTransaction(unconfidentialAddress, amount) {
                 nonce: Buffer.alloc(1, 0),
             },
         });
-        TOTAL_VALUE += utxo.value;
+        TOTAL_VALUE += value;
     }
     psbt.addOutput({
         script: address.toOutputScript(unconfidentialAddress, NETWORK),
@@ -141,9 +145,9 @@ async function createBlindedTransaction(unconfidentialAddress, amount) {
         nonce: Buffer.alloc(1, 0),
     });
     console.log("✓ Transaction created");
-    return psbt;
+    return { psbt, blindedInputs };
 }
-async function blindOutputs(psbt, blindingPubkey
+async function blindOutputs(psbt, blindingPubkey, blindInputs = false
 // blindingKeyPairs: ECPairInterface[]
 ) {
     // TODO: Use static blinding key, but generate a blinding keypair dynamically
@@ -161,7 +165,7 @@ async function blindOutputs(psbt, blindingPubkey
             privateKey: getBlindingKey().privateKey,
             publicKey: getBlindingKey().publicKey,
         };
-    }, new Map(), new Map().set(0, blindingPubkey));
+    }, blindInputs ? new Map().set(0, getBlindingKey().privateKey) : new Map(), new Map().set(0, blindingPubkey));
     console.log("✓ Outputs blinded");
     return { psbt, ephemeralBlinds };
 }
@@ -320,8 +324,8 @@ async function sendBitcoin(confidentialAddress, message) {
     // const confidentialAddress =
     //   "el1qqfj44uf6v0wffqm5lnapr9rq4j49uzd7fq50djvn25v3ndlj5u8gcgrhu8g45sr6u5eh2gqyvumzy7nxxspk29mdf38fl94st";
     let recipientBlindingData = getBlindingDataFromAddress(confidentialAddress);
-    let psbt = await createBlindedTransaction(recipientBlindingData.unconfidentialAddress, 1000);
-    let { ephemeralBlinds } = await blindOutputs(psbt, recipientBlindingData.blindingPubKey);
+    let { psbt, blindedInputs } = await createBlindedTransaction(recipientBlindingData.unconfidentialAddress, 1000);
+    let { ephemeralBlinds } = await blindOutputs(psbt, recipientBlindingData.blindingPubKey, blindedInputs);
     let t = psbt
         .clone()
         .signAllInputs(getKeypair())
