@@ -19,8 +19,8 @@ const address = liquidjs.address;
 let allUtxos: any;
 const MESSAGE_PREFIX = "lm";
 const OUTPUT_INDEX = 0;
-const HOST = "localhost:3001"; ///blockstream.info/liquid/api
-const EXPLORER_URL = "http://localhost:5001";
+const HOST = "https://blockstream.info/liquidtestnet/api"; ///blockstream.info/liquid/api
+const EXPLORER_URL = "https://blockstream.info/liquidtestnet";
 
 // Interface for UTXO data from block explorer
 interface UTXO {
