@@ -257,7 +257,6 @@ async function initializeApp() {
     document.getElementById('user-address').textContent = truncateAddress(state.userAddress);
     document.getElementById('modal-address').textContent = state.userAddress;
 
-    debugger;
     state.balance = await getBalance();
     document.getElementById('user-balance').textContent = `${state.balance.toLocaleString()} sats`;
 

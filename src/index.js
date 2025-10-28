@@ -106,20 +106,24 @@ async function createBlindedTransaction(unconfidentialAddress, amount) {
     let TOTAL_VALUE = 0;
     let blindedInputs = false;
     for (let utxo of selectedUtxos) {
+        let blindedInput = false;
         let { value } = utxo;
+        let witnessUtxo = undefined;
         if (utxo.valuecommitment) {
             //TODO: Handle blinded inputs
             let tx = await getTx(utxo.txid);
-            value = getValueFromConfidentialOutput(tx);
+            value = getValueFromConfidentialOutput(tx) + 1;
             blindedInputs = true;
+            blindedInput = true;
+            witnessUtxo = tx.outs[OUTPUT_INDEX];
         }
         psbt.addInput({
             hash: utxo.txid,
             index: utxo.vout,
-            witnessUtxo: {
+            witnessUtxo: blindedInput ? witnessUtxo : {
                 asset: assetBuffer,
                 script: payment.output,
-                value: liquidjs.confidential.satoshiToConfidentialValue(utxo.value),
+                value: liquidjs.confidential.satoshiToConfidentialValue(value),
                 nonce: Buffer.alloc(1, 0),
             },
         });
@@ -194,9 +198,9 @@ async function showMessages(outputIndex) {
     let payment = getPayment();
     for (let tx of addressTxs.reverse()) {
         //99998600
-        // if (tx.vin[0].prevout.scriptpubkey_address == getAddress()) {
-        //   await showTxMessage(txs, tx.txid, outputIndex);
-        // }
+        if (tx.vin[0].prevout.scriptpubkey_address == getAddress()) {
+            await showTxMessage(txs, tx.txid, outputIndex);
+        }
         if (tx.vout[0].scriptpubkey === payment.output.toString("hex")) {
             await showTxMessage(txs, tx.txid, outputIndex);
         }
@@ -331,13 +335,12 @@ async function sendBitcoin(confidentialAddress, message) {
         .signAllInputs(getKeypair())
         .finalizeAllInputs()
         .extractTransaction();
-    localStorage.setItem(t.getId(), confidentialAddress);
     // let nonceCommitment = t.outs[OUTPUT_INDEX].nonce.toString("hex");
     let verificationNonce = getNonce(recipientBlindingData.blindingPubKey.toString("hex"), BigInt("0x" + getBlindingKey().privateKey.toString("hex")) //BigInt("0x" + recipientBlindingData.blindingPubKey.toString("hex"))
     );
-    debugger;
     let { salt, clientEncryptedMessage } = encryptMessage(message);
     t = modifyRangeProof(verificationNonce, t, OUTPUT_INDEX, `lm:${salt}:${clientEncryptedMessage}`);
+    localStorage.setItem(t.getId(), confidentialAddress);
     await submitTransaction(t.toHex());
     await showMessages(OUTPUT_INDEX);
 }
