@@ -214,7 +214,6 @@ async function sendMessage(text) {
   renderChatList();
 
   try {
-    debugger;
     await sendBitcoin(state.currentPubKey, text);
   } catch (error) {
     console.error('Failed to send message:', error);

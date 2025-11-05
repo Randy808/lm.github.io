@@ -19,8 +19,20 @@ const address = liquidjs.address;
 let allUtxos: any;
 const MESSAGE_PREFIX = "lm";
 const OUTPUT_INDEX = 0;
-const HOST = "https://blockstream.info/liquidtestnet/api"; ///blockstream.info/liquid/api
-const EXPLORER_URL = "https://blockstream.info/liquidtestnet";
+
+let networkExplorerAPI = {
+  [liquidjs.networks.regtest.name]: "http://localhost:30001",
+  [liquidjs.networks.testnet.name]:
+    "https://blockstream.info/liquidtestnet/api",
+};
+
+let networkExplorerUI = {
+  [liquidjs.networks.regtest.name]: "http://localhost:5001",
+  [liquidjs.networks.testnet.name]: "https://blockstream.info/liquidtestnet",
+};
+
+const HOST = networkExplorerAPI[NETWORK.name]; ///blockstream.info/liquid/api
+const EXPLORER_URL = networkExplorerUI[NETWORK.name];
 
 // Interface for UTXO data from block explorer
 interface UTXO {
@@ -148,7 +160,7 @@ function getConfidentialAddress() {
 async function createBlindedTransaction(
   unconfidentialAddress: string,
   amount: number
-): Promise<{ psbt: Psbt; blindedInputs: boolean }> {
+): Promise<{ psbt: Psbt; blindedInputs: number[] }> {
   const psbt = new Psbt({
     network: NETWORK,
   });
@@ -161,17 +173,18 @@ async function createBlindedTransaction(
 
   let TOTAL_VALUE = 0;
 
-  let blindedInputs = false;
-  for (let utxo of selectedUtxos) {
-    let blindedInput = false;
+  let blindedInputs = [];
+  for (let [i, utxo] of selectedUtxos.entries()) {
     let { value } = utxo;
+    let blindedInput = false;
 
     let witnessUtxo = undefined;
     if (utxo.valuecommitment) {
+      console.log("V commitmnet", utxo.valuecommitment);
       //TODO: Handle blinded inputs
       let tx = await getTx(utxo.txid);
       value = getValueFromConfidentialOutput(tx) + 1;
-      blindedInputs = true;
+      blindedInputs.push(i);
       blindedInput = true;
       witnessUtxo = tx.outs[OUTPUT_INDEX];
     }
@@ -179,16 +192,23 @@ async function createBlindedTransaction(
     psbt.addInput({
       hash: utxo.txid,
       index: utxo.vout,
-      witnessUtxo: blindedInput ? witnessUtxo : {
-        asset: assetBuffer,
-        script: payment.output!,
-        value: liquidjs.confidential.satoshiToConfidentialValue(value),
-        nonce: Buffer.alloc(1, 0),
-      },
+      witnessUtxo: blindedInput
+        ? witnessUtxo
+        : {
+            asset: assetBuffer,
+            script: payment.output!,
+            value: liquidjs.confidential.satoshiToConfidentialValue(value),
+            nonce: Buffer.alloc(1, 0),
+          },
     });
 
     TOTAL_VALUE += value;
+    if (TOTAL_VALUE > amount) {
+      break;
+    }
   }
+
+  console.log("Blinded inputs", blindedInputs);
 
   psbt.addOutput({
     script: address.toOutputScript(unconfidentialAddress, NETWORK),
@@ -222,7 +242,7 @@ async function createBlindedTransaction(
 async function blindOutputs(
   psbt: Psbt,
   blindingPubkey: Buffer,
-  blindInputs: boolean = false
+  blindInputs: number[] = []
   // blindingKeyPairs: ECPairInterface[]
 ): Promise<{ psbt: Psbt; ephemeralBlinds: any[] }> {
   // TODO: Use static blinding key, but generate a blinding keypair dynamically
@@ -236,6 +256,11 @@ async function blindOutputs(
     return randomKeypair;
   };
 
+  let inputBlinds = new Map();
+  for (let blindedIndex of blindInputs) {
+    inputBlinds.set(blindedIndex, getBlindingKey().privateKey);
+  }
+
   // Get my epehermeral privk somehow
   await psbt.blindOutputsByIndex(
     () => {
@@ -244,7 +269,7 @@ async function blindOutputs(
         publicKey: getBlindingKey().publicKey,
       };
     },
-    blindInputs ? new Map().set(0, getBlindingKey().privateKey) : new Map(),
+    inputBlinds,
     new Map().set(0, blindingPubkey)
   );
 
@@ -446,6 +471,13 @@ async function showTxMessage(txs, txid: string, outputIndex: number) {
 
 function decryptMessage(encryptedMessage: string, salt: Uint8Array) {
   let messageBytes = Buffer.from(encryptedMessage, "hex");
+
+  if (salt.length !== 32) {
+    debugger;
+    console.error("invalid salt len");
+    return;
+  }
+
   let key = sha256(salt);
   let j = 0;
   for (let i = 0; i < encryptedMessage.length; i++) {
@@ -454,10 +486,11 @@ function decryptMessage(encryptedMessage: string, salt: Uint8Array) {
       j = 0;
     }
 
+    messageBytes[i] ^= key[j];
+
     if (messageBytes[i] === 0) {
       break;
     }
-    messageBytes[i] ^= key[j];
 
     j++;
   }
@@ -514,7 +547,6 @@ async function sendBitcoin(confidentialAddress: string, message: string) {
     recipientBlindingData.blindingPubKey.toString("hex"),
     BigInt("0x" + getBlindingKey().privateKey.toString("hex")) //BigInt("0x" + recipientBlindingData.blindingPubKey.toString("hex"))
   );
-
 
   let { salt, clientEncryptedMessage } = encryptMessage(message);
   t = modifyRangeProof(

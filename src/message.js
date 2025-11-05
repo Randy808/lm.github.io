@@ -117,7 +117,6 @@ export function getMessageFromDecryptedSignature(numRings, ringSize, decryptedSi
             let startOfMessageChunk = ringIndex * ringSize * SIGNATURE_SIZE + sigIndex * SIGNATURE_SIZE;
             let endOfMessageChunk = startOfMessageChunk + SIGNATURE_SIZE;
             let message = decryptedSignatureData.subarray(startOfMessageChunk, endOfMessageChunk);
-            console.log(`CHUNK ${ringIndex}, ${sigIndex}:`, Buffer.from(message).toString("ascii"));
             if (!decryptedMessage) {
                 decryptedMessage = message;
             }

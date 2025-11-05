@@ -167,7 +167,6 @@ export function getMessageFromDecryptedSignature(
         startOfMessageChunk,
         endOfMessageChunk
       );
-      console.log(`CHUNK ${ringIndex}, ${sigIndex}:`, Buffer.from(message).toString("ascii"))
       if (!decryptedMessage) {
         decryptedMessage = message;
       } else {

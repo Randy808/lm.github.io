@@ -1,5 +1,5 @@
 import * as liquid from "liquidjs-lib";
-import { Fn, lift_x } from "./utils";
+import { Fn, getSecIdx, lift_x } from "./utils";
 import { secp256k1 } from "@noble/curves/secp256k1";
 import { sha256 } from "@noble/hashes/sha2";
 import { generateRangeProof, genrand, getQuadness } from "./play";
@@ -86,10 +86,7 @@ function main(nonce: bigint, t: liquid.Transaction, outputIndex: number, message
   let assetIdHex = decryptedByteValuesBuffer.subarray(0, 32).toString("hex");
   let assetBlind = decryptedByteValuesBuffer.subarray(32, 64).toString("hex");
 
-  let secidx: any[] = [];
-  for (let i = 0; i < 26; i++) {
-    secidx[i] = Number(valueBigIntArg >> BigInt(i * 2)) & 3;
-  }
+  let secidx: any[] = getSecIdx(valueBigIntArg);
 
   let parsedCommitments: any[] = [];
 
